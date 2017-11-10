@@ -1,8 +1,8 @@
 local MIN_SPEED = 50
 local MAX_SPEED = 350
-local TRAIL_LENGTH = 100
+local TRAIL_LENGTH = 30
 local PARTICLE_RADIUS = 6
-local LIFESPAN = 30 -- seconds
+local LIFESPAN = 20 -- seconds
 
 Ray = Class{
     init = function(self, x, y, atX, atY)
@@ -10,6 +10,7 @@ Ray = Class{
         self.direction = Vector(atX - x, atY - y)
         self.radius = PARTICLE_RADIUS
         self.hitbox = HC.circle(x, y, self.radius)
+        self.hitbox.owner = self
         if (self.direction:len() < MIN_SPEED) then
             self.direction = self.direction:normalized() * MIN_SPEED
         elseif (self.direction:len() > MAX_SPEED) then
@@ -26,14 +27,14 @@ Ray = Class{
         return self.red, self.green, self.blue
     end;
     update = function(self, dt, tick)
-        if (tick % 2 == 0) then
+        if (tick % 5 == 0) then
             table.insert(self.trail, self.pos)
+            if (#self.trail > TRAIL_LENGTH) then
+                table.remove(self.trail, 1)
+            end
         end
 
-        self:move(dt, 1)
-        if (#self.trail > TRAIL_LENGTH) then
-            table.remove(self.trail, 1)
-        end
+        self:moveIncrementally(dt, 1, 8)
 
         self.timetolive = self.timetolive - dt
         if (self.timetolive < 0) then
@@ -46,10 +47,24 @@ Ray = Class{
         self.pos = self.pos + self.direction * speed_coefficient * dt
         self.hitbox:moveTo(self.pos.x, self.pos.y)
     end;
-    handleCollisions = function(self, dt)
-        for other, separating_vector in pairs(HC.collisions(self.hitbox)) do
-            self.direction = self.direction + separating_vector
-            self:move(dt, 0.5)
+    moveIncrementally = function(self, dt, speed_coefficient, increments)
+        local timeIncrement = dt/increments
+        local colliding = false
+        for i = 1, increments do
+            self:move(timeIncrement, speed_coefficient)
+            for other in pairs(HC.neighbors(self.hitbox)) do
+                local collides, dx, dy = self.hitbox:collidesWith(other)
+                if collides then
+                    local speed = self.direction:len()
+                    self.direction = (self.direction + Vector(dx*increments, dy*increments)):normalized() * speed
+                    colliding = true
+                    self:move(timeIncrement, speed_coefficient)
+                    other.owner:collidedWith()
+                end
+            end
+            if (colliding) then
+                break
+            end
         end
     end;
     draw = function(self)
@@ -61,5 +76,8 @@ Ray = Class{
             love.graphics.setColor(r, g, b, (80/#self.trail)*i)
             love.graphics.circle("fill", self.trail[i].x, self.trail[i].y, (self.radius/#self.trail)*i) --reduce the size further along!!?
         end
+    end;
+    collidedWith = function(self)
+        --nothing for now, maybe cute effects/tweening
     end;
 }
