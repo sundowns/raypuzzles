@@ -1,6 +1,6 @@
 local MIN_SPEED = 50
-local MAX_SPEED = 350
-local TRAIL_LENGTH = 30
+local MAX_SPEED = 700 --350
+local TRAIL_LENGTH = 80
 local PARTICLE_RADIUS = 6
 local LIFESPAN = 20 -- seconds
 
@@ -27,7 +27,7 @@ Ray = Class{
         return self.red, self.green, self.blue
     end;
     update = function(self, dt, tick)
-        if (tick % 5 == 0) then
+        if (tick % 3 == 0) then
             table.insert(self.trail, self.pos)
             if (#self.trail > TRAIL_LENGTH) then
                 table.remove(self.trail, 1)

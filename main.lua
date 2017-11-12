@@ -6,11 +6,13 @@ local tick = 0
 local MAP_WIDTH = 0
 local MAP_HEIGHT = 0
 local mouseObstacle = nil
+local camera = nil
 
 function love.load()
     math.randomseed(os.time())
     Vector = require "libs.vector"
     Class = require "libs.class"
+    Camera = require "libs.camera"
     HC = require "libs.HC"
     HC.resetHash(20)
     require("src.ray")
@@ -19,6 +21,7 @@ function love.load()
     gameOver = false
     MAP_WIDTH = love.graphics.getWidth()
     MAP_HEIGHT = love.graphics.getHeight()
+    camera = Camera(MAP_WIDTH/2, MAP_HEIGHT/2, 0.7, 0)
     --Walls
     table.insert(obstacles, RectangularObstacle(-50, -50, MAP_WIDTH + 100, 50)) --top wall (starts top left)
     table.insert(obstacles, RectangularObstacle(-50, -50, 50, MAP_HEIGHT + 100)) --left wall (starts top left)
@@ -28,7 +31,7 @@ function love.load()
     table.insert(obstacles, CircularGoal(love.math.random(0, MAP_WIDTH), love.math.random(0, MAP_HEIGHT), 10))
     --table.insert(obstacles, RectangularGoal(love.math.random(0, MAP_WIDTH), love.math.random(0, MAP_HEIGHT), 10, 10))
     --Mouse obstacles
-    mouseObstacle = CircularObstacle(-100, -100, 20)
+    mouseObstacle = CircularObstacle(-100000, -100000, 20)
     table.insert(obstacles, mouseObstacle)
 
     print("MOUSE1: Place a ray (hold and release)")
@@ -50,14 +53,26 @@ function love.update(dt)
         end
 
         if love.mouse.isDown(3) then
-            mouseObstacle:move(love.mouse.getPosition())
+            local camX, camY = camera:worldCoords(love.mouse.getPosition())
+            mouseObstacle:move(camX, camY)
         else
-            mouseObstacle:move(-100, -100)
+            mouseObstacle:move(-10000000, -10000000)
+        end
+
+        if love.keyboard.isDown("left", "a") then
+            camera:move(-1, 0)
+        elseif love.keyboard.isDown("up", "w") then
+            camera:move(0, -1)
+        elseif love.keyboard.isDown("right", "d") then
+            camera:move(1, 0)
+        elseif love.keyboard.isDown("down", "s") then
+            camera:move(0,1)
         end
     end
 end
 
 function love.draw()
+    camera:attach()
     for i, entity in ipairs(rays) do
         entity:draw()
     end
@@ -68,6 +83,8 @@ function love.draw()
     if (newRayX and newRayY) then
         love.graphics.circle('line', newRayX, newRayY, 4)
     end
+    resetColour()
+    camera:detach()
 
     --UI / OVERLAY
     love.graphics.print("Current FPS: "..tostring(love.timer.getFPS( )), 10, 10)
@@ -79,8 +96,9 @@ function love.draw()
     if paused and not gameOver then
         love.graphics.setColor(255,0,0)
         love.graphics.print("P A U S E D", love.graphics.getWidth()/2 - 50, love.graphics.getHeight()/2)
-        resetColour()
     end
+    resetColour()
+
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -95,21 +113,23 @@ function love.keypressed(key, scancode, isrepeat)
 end
 
 function love.mousepressed(x, y, button, isTouch)
+    local camX, camY = camera:worldCoords(x, y)
     if not paused then
         if button == 1 then
-            newRayX = x
-            newRayY = y
+            newRayX = camX
+            newRayY = camY
         elseif button == 2 then
-            addRandomObstacle(x, y)
+            addRandomObstacle(camX, camY)
         end
     end
 end
 
 function love.mousereleased(x, y, button, isTouch)
+    local camX, camY = camera:worldCoords(x, y)
     if not paused then
         if newRayX and newRayY then
-            if (newRayX ~= x or newRayY ~= y) then
-                rays[#rays+1] = Ray(newRayX, newRayY, x, y)
+            if (newRayX ~= camX or newRayY ~= camY) then
+                rays[#rays+1] = Ray(newRayX, newRayY, camX, camY)
             end
             newRayX = nil
             newRayY = nil
