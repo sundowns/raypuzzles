@@ -82,5 +82,14 @@ StageManager = Class {
         elseif choice == 2 then
             table.insert(self.obstacles, CircularObstacle(x, y, love.math.random(8,50)))
         end
-    end
+    end;
+    update = function(self, dt)
+        for i=#self.obstacles,1,-1 do --back to front so we can safely remove (https://stackoverflow.com/questions/12394841/safely-remove-items-from-an-array-table-while-iterating)
+            local obstacle = self.obstacles[i]
+            local kill = obstacle:update(dt)
+            if kill then
+                table.remove(self.obstacles, i)
+            end
+        end
+    end;
 }

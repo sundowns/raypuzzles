@@ -16,10 +16,10 @@ return {
         {shape = "CircularObstacle", x = 40, y = 320, radius = 50},
         {shape = "RectangularObstacle", x = 275, y = 0, width = 10, height = 70},
         {shape = "RectangularObstacle", x = 315, y = 0, width = 10, height = 70},
-        {shape = "RectangularSpawn", x = 285, y = 0, width = 30, height = 60},
+        {shape = "RectangularSpawn", x = 285, y = 0, width = 30, height = 40},
         {shape = "RectangularObstacle", x = 275, y = 330, width = 10, height = 70},
         {shape = "RectangularObstacle", x = 315, y = 330, width = 10, height = 70},
-        {shape = "RectangularSpawn", x = 285, y = 340, width = 30, height = 60},
+        {shape = "RectangularSpawn", x = 285, y = 360, width = 30, height = 40},
         {shape = "CircularGoal", x = 30, y = 200, radius = 25},
         {shape = "CircularGoal", x = 570, y = 200, radius = 25}
     }

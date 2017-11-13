@@ -1,7 +1,6 @@
 local rays = {}
 local newRayX = nil
 local newRayY = nil
-local tick = 0
 local MAP_WIDTH = 0
 local MAP_HEIGHT = 0
 local mouseObstacle = nil
@@ -14,6 +13,7 @@ function love.load()
     Vector = require "libs.vector"
     Class = require "libs.class"
     Camera = require "libs.camera"
+    Timer = require "libs.timer"
     HC = require "libs.HC"
     HC.resetHash(20)
     require("src.util")
@@ -42,10 +42,10 @@ end
 
 function love.update(dt)
     if not paused then
-        tick = tick + 1
+        stageManager:update(dt)
         for i=#rays,1,-1 do --back to front so we can safely remove (https://stackoverflow.com/questions/12394841/safely-remove-items-from-an-array-table-while-iterating)
             local entity = rays[i]
-            local kill = entity:update(dt, tick)
+            local kill = entity:update(dt)
             if kill then
                 table.remove(rays, i)
             end
@@ -102,9 +102,13 @@ function love.keypressed(key, scancode, isrepeat)
             stageManager:nextStage()
             gameOver = false
         end
+        print("wtff")
         paused = not paused
     elseif key == "f1" then
         love.event.quit("restart")
+    elseif key == "f2" then
+        rays = {}
+        stageManager:nextStage()
     end
 end
 
