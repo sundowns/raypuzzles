@@ -1,6 +1,6 @@
 local MIN_SPEED = 50
 local MAX_SPEED = 700 --350
-local TRAIL_LENGTH = 80
+local TRAIL_LENGTH = 60
 local PARTICLE_RADIUS = 6
 local LIFESPAN = 20 -- seconds
 
@@ -27,7 +27,7 @@ Ray = Class{
         return self.red, self.green, self.blue
     end;
     update = function(self, dt, tick)
-        if (tick % 3 == 0) then
+        if (tick % 4 == 0) then
             table.insert(self.trail, self.pos)
             if (#self.trail > TRAIL_LENGTH) then
                 table.remove(self.trail, 1)
@@ -54,7 +54,7 @@ Ray = Class{
             self:move(timeIncrement, speed_coefficient)
             for other in pairs(HC.neighbors(self.hitbox)) do
                 local collides, dx, dy = self.hitbox:collidesWith(other)
-                if collides then
+                if collides and not other.owner.IsSpawn then
                     local speed = self.direction:len()
                     self.direction = (self.direction + Vector(dx*increments, dy*increments)):normalized() * speed
                     colliding = true
