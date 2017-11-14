@@ -51,12 +51,18 @@ StageManager = Class {
                     table.insert(self.obstacles, CircularGoal(item.x, item.y, item.radius))
                 elseif item.shape == "CircularSpawn" then
                     table.insert(self.obstacles, CircularSpawn(item.x, item.y, item.radius))
+                elseif item.shape == "CircularTrap" then
+                    table.insert(self.obstacles, CircularTrap(item.x, item.y, item.radius))
                 elseif item.shape == "RectangularObstacle" then
-                    table.insert(self.obstacles, RectangularObstacle(item.x, item.y, item.width, item.height, item.rotation))
+                    table.insert(self.obstacles, RectangularObstacle(item.x, item.y, item.width, item.height, item.rotation, item.rotates))
                 elseif item.shape == "RectangularGoal" then
-                    table.insert(self.obstacles, RectangularGoal(item.x, item.y, item.width, item.height, item.rotation))
+                    table.insert(self.obstacles, RectangularGoal(item.x, item.y, item.width, item.height, item.rotation, item.rotates))
                 elseif item.shape == "RectangularSpawn" then
-                    table.insert(self.obstacles, RectangularSpawn(item.x, item.y, item.width, item.height, item.rotation))
+                    table.insert(self.obstacles, RectangularSpawn(item.x, item.y, item.width, item.height, item.rotation, item.rotates))
+                elseif item.shape == "RectangularTrap" then
+                    table.insert(self.obstacles, RectangularTrap(item.x, item.y, item.width, item.height, item.rotation, item.rotates))
+                elseif item.shape == "TriangularObstacle" then
+                    table.insert(self.obstacles, TriangularObstacle(item.x, item.y, item.length, item.rotation, item.rotates))
                 end
             end
         end

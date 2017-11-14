@@ -36,7 +36,8 @@ function love.load()
     print("MOUSE3: Move stuff around")
     print("SPACE: Pause")
     print("WASD/Arrows: Move camera")
-    print("F1: Restart\n")
+    print("F1: Restart")
+    print("F2: Next level")
     print("==========")
 end
 
@@ -99,6 +100,8 @@ function love.keypressed(key, scancode, isrepeat)
     if key == "space" then
         if gameOver then
             rays = {}
+            newRayX = nil
+            newRayY = nil
             stageManager:nextStage()
             gameOver = false
         end
@@ -108,7 +111,10 @@ function love.keypressed(key, scancode, isrepeat)
         love.event.quit("restart")
     elseif key == "f2" then
         rays = {}
+        newRayX = nil
+        newRayY = nil
         stageManager:nextStage()
+        gameOver = false
     end
 end
 
