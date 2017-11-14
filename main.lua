@@ -1,12 +1,18 @@
 local rays = {}
 local newRayX = nil
 local newRayY = nil
-local MAP_WIDTH = 0
-local MAP_HEIGHT = 0
 local mouseObstacle = nil
-local camera = nil
 local currentStage = 1
 local stageManager = {}
+
+-- GLobal cause trust
+camera = nil
+
+-- Add to a constants file
+BASE_POWER = 50
+PARTICLE_RADIUS = 6
+MAP_WIDTH = 0
+MAP_HEIGHT = 0
 
 function love.load()
     math.randomseed(os.time())
@@ -15,7 +21,7 @@ function love.load()
     Camera = require "libs.camera"
     Timer = require "libs.timer"
     HC = require "libs.HC"
-    HC.resetHash(20)
+    --HC.resetHash(20)
     require("src.util")
     require("src.ray")
     require("src.obstacle")
@@ -25,7 +31,7 @@ function love.load()
     love.graphics.setBackgroundColor(0,0,0,255)
     stageManager = StageManager("001")
     MAP_WIDTH, MAP_HEIGHT = stageManager:getStageDimensions()
-    camera = Camera(MAP_WIDTH/2, MAP_HEIGHT/2, 0.7, 0)
+    camera = Camera(MAP_WIDTH/2, MAP_HEIGHT/2, 0.6, 0)
     --Mouse obstacles
     -- mouseObstacle = CircularObstacle(-100000, -100000, 20)
     -- table.insert(obstacles, mouseObstacle)
@@ -75,8 +81,8 @@ function love.draw()
         entity:draw()
     end
     if (newRayX and newRayY) then
-        love.graphics.setColor(0, 0, 0)
-        love.graphics.circle('line', newRayX, newRayY, 5)
+        love.graphics.setColor(0, 0, 0,255)
+        love.graphics.circle('fill', newRayX, newRayY, 5)
     end
     reset_colour()
     camera:detach()
@@ -104,6 +110,7 @@ function love.keypressed(key, scancode, isrepeat)
             newRayY = nil
             stageManager:nextStage()
             gameOver = false
+            camera:lookAt(MAP_WIDTH/2, MAP_HEIGHT/2)
         end
         print("wtff")
         paused = not paused
@@ -115,6 +122,7 @@ function love.keypressed(key, scancode, isrepeat)
         newRayY = nil
         stageManager:nextStage()
         gameOver = false
+        camera:lookAt(MAP_WIDTH/2, MAP_HEIGHT/2)
     end
 end
 
@@ -122,15 +130,21 @@ function love.mousepressed(x, y, button, isTouch)
     if not paused then
         local camX, camY = camera:worldCoords(x, y)
         if button == 1 then
-            local newRayPoint = HC.point(camX, camY)
+            local newRayPoint = HC.circle(camX, camY, PARTICLE_RADIUS)
             local inStartZone = false
+            --local inObstacle = false
             for other, separating_vector in pairs(HC.collisions(newRayPoint)) do
-                if other and other.owner.IsSpawn then
-                    inStartZone = true
+                if other then
+                    if other.owner.IsSpawn then
+                        inStartZone = true
+                    -- else
+                    --     inObstacle = true
+                    end
+
                 end
             end
             HC.remove(newRayPoint)
-            if inStartZone then
+            if inStartZone  then --and not inObstacle
                 newRayX = camX
                 newRayY = camY
             end
@@ -145,12 +159,20 @@ function love.mousereleased(x, y, button, isTouch)
     if not paused then
         if newRayX and newRayY then
             if (newRayX ~= camX or newRayY ~= camY) then
-                rays[#rays+1] = Ray(newRayX, newRayY, camX, camY)
+                rays[#rays+1] = Ray(newRayX, newRayY, camX, camY, PARTICLE_RADIUS)
             end
             newRayX = nil
             newRayY = nil
         end
     end
+end
+
+function love.wheelmoved(x, y)
+    -- if y > 0 then -- fucks with power scale
+    --     camera:zoom(1.05)
+    -- elseif y < 0 then
+    --     camera:zoom(0.95)
+    -- end
 end
 
 function goalHit()
