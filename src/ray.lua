@@ -1,5 +1,5 @@
-local MIN_SPEED = 3
-local MAX_SPEED = 50
+local MIN_SPEED = 20
+local MAX_SPEED = 150
 local TRAIL_LENGTH = 120
 local PROJECTILE_SCATTER_COUNT = 100
 local LIFESPAN = 13 -- seconds
@@ -13,7 +13,6 @@ Ray = Class{
         local aCamX, aCamY = camera:worldCoords(x,y)
         local bCamX, bCamY = camera:worldCoords(atX, atY)
         local distance = distanceFrom(aCamX, aCamY, bCamX, bCamY)
-        print("disty" ..distance)
         self.power = BASE_POWER*distance/love.graphics.getWidth()/2 --TODO: figure out power scale
         local attempted = self.power
         self.radius = radius
@@ -30,8 +29,8 @@ Ray = Class{
         self.timer = Timer.new()
         self.collisionParticles = {}
         self:prepareParticleSystems()
-
         self.isColliding = false
+        self.IsRay = true
     end;
     getColour = function(self)
         return self.red, self.green, self.blue
@@ -79,21 +78,18 @@ Ray = Class{
             self:moveWithDirection(timeIncrement)
             for other in pairs(HC.neighbors(self.hitbox)) do
                 local collides, dx, dy = self.hitbox:collidesWith(other)
-                if collides and not other.owner.IsSpawn then
-                    if other.owner.IsTrap then kill = true end
-                    self.direction = self.direction:normalized() + Vector(dx*dt, dy*dt):normalized()
-                    self:move(dx*dt, dy*dt)
-                    colliding = true
-                    other.owner:collidedWith()
+                if collides then
+                    if other.owner.IsObstacle and not other.owner.IsSpawn then
+                        kill = self:collideWithObstacle(other.owner, dx, dy, dt)
+                        colliding = true
+                    elseif other.owner.IsRay then
+                        kill = self:collideWithRay(other.owner, dx, dy, dt)
+                        colliding = true
+                    end
                 end
             end
-            self.direction = self.direction:normalized() * self.power
-            self:moveWithDirection(timeIncrement*(increments-1))
-            if (colliding) then
-                self.isColliding = true
-                self.timer:after(0.07, function() self.isColliding = false end)
-                break
-            end
+            self.direction = self.direction:normalized() * self.power -- to maintain constant speed
+            self:moveWithDirection(timeIncrement)
         end
         return kill
     end;
@@ -107,45 +103,65 @@ Ray = Class{
         love.graphics.setBlendMode("alpha")
         love.graphics.draw(self.trail)
     end;
-    collidedWith = function(self)
-        self.isColliding = true
-        self.timer:after(0.07, function() self.isColliding = false end)
-    end;
     prepareParticleSystems = function(self)
         local r,g,b = self:getColour()
         -- Trail
         local trailCanvas = love.graphics.newCanvas(PS_WIDTH, PS_HEIGHT)
-        love.graphics.setCanvas(trailCanvas) -- Switch to drawing on canvas 'trail'
+        love.graphics.setCanvas(trailCanvas) -- Switch to drawing on canvas
         love.graphics.setBlendMode("alpha")
         love.graphics.setColor(255, 255, 255, 255)
         love.graphics.circle("fill", PS_WIDTH / 2, PS_HEIGHT / 2, 6, 10)
         love.graphics.setCanvas() -- Switch back to drawing on main screen
         self.trail = love.graphics.newParticleSystem(trailCanvas, self.TRAIL_LENGTH)
         self.trail:moveTo(self.pos.x, self.pos.y)
-        self.trail:setParticleLifetime(2.5) -- (min, max)
+        self.trail:setParticleLifetime(2.5)
         self.trail:setSizes(1, 0.75, 0.5, 0.15)
         self.trail:setLinearAcceleration(0, 0, 0, 0) -- (minX, minY, maxX, maxY)
-
-        self.trail:setColors(r, g, b, 150, r, g, b, 40) -- (r1, g1, b1, a1, r2, g2, b2, a2 ...)
+        self.trail:setColors(r, g, b, 150, r, g, b, 40)
         self.trail:setEmissionRate(120)
-
-
 
         -- Collision effects
         local collisionCanvas = love.graphics.newCanvas(PS_WIDTH, PS_HEIGHT)
-        love.graphics.setCanvas(collisionCanvas) -- Switch to drawing on canvas 'trail'
+        love.graphics.setCanvas(collisionCanvas)
         love.graphics.setBlendMode("alpha")
         love.graphics.setColor(255, 255, 255, 255)
         love.graphics.circle("fill", PS_WIDTH / 2, PS_HEIGHT / 2, 5, 3)
-        love.graphics.setCanvas() -- Switch back to drawing on main screen
+        love.graphics.setCanvas()
         self.collisionParticles = love.graphics.newParticleSystem(collisionCanvas, PROJECTILE_SCATTER_COUNT)
-        self.collisionParticles:setParticleLifetime(0.5, 2) -- (min, max)
+        self.collisionParticles:setParticleLifetime(0.5, 2)
         self.collisionParticles:setSizeVariation(0.7)
         self.collisionParticles:setSpin(-4*math.pi, 4*math.pi)
         self.collisionParticles:setSpinVariation(1)
         self.collisionParticles:setLinearAcceleration(-100, -100, 100, 100) -- (minX, minY, maxX, maxY)
         self.collisionParticles:setSpread(math.pi/4)
-        self.collisionParticles:setColors(r, g, b, 255, r, g, b, 150) -- (r1, g1, b1, a1, r2, g2, b2, a2 ...)
+        self.collisionParticles:setColors(r, g, b, 255, r, g, b, 150)
         self.collisionParticles:moveTo(self.pos.x, self.pos.y)
+    end;
+    emitCollisionParticles = function(self)
+        self.isColliding = true
+        self.timer:after(0.07, function() self.isColliding = false end)
+    end;
+    --displacement x & y + velocity to combine with
+    collidedWith = function(self, dx, dy, velocity)
+        self.direction = (self.direction + velocity):normalized() * self.power
+        self:move(dx, dy)
+        self:emitCollisionParticles()
+    end;
+    collideWithObstacle = function(self, obstacle, dx, dy, dt)
+        --TODO: Is this fine? seems ok for non-circles
+        --TODO: replace this with bouncing off different walls that makes sense! (this makes no sense!)
+        --dx,dy is the separating vector needed to stop overlap, NOT the normal vector (which we mirror/flip over for a proper bounce)
+        self.direction = self.direction + Vector(dx, dy)
+        self:move(dx*dt, dy*dt) --this however is legit, the separating vector SHOULD be used to prevent clipping
+        obstacle:collidedWith(-dx*dt, -dy*dt)
+        self:emitCollisionParticles()
+        if obstacle.IsTrap then return true else return false end
+    end;
+    collideWithRay = function(self, ray, dx, dy, dt)
+        local originalVelocity = self.direction:clone()
+        self.direction = (self.direction + ray.direction):normalized() * self.power
+        self:move(dx*dt/2, dy*dt/2)
+        ray:collidedWith(-dx*dt/2, -dy*dt/2, originalVelocity)
+        self:emitCollisionParticles()
     end;
 }

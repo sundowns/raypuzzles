@@ -6,7 +6,7 @@ StageManager = Class {
         for k, val in pairs(self.stageList) do
             self.stageList[k] = val:gsub("%.lua", "") --removeS file extensions
         end
-        self.currentStageOrdinal = 1
+        self.currentStageOrdinal = 5
         self.hasLoaded = false
         self:loadStage()
     end;

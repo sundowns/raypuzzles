@@ -1,7 +1,7 @@
 Obstacle = Class{
     init = function(self, x, y)
-        self.id = random_string(12)
         self.position = Vector(x, y)
+        self.IsObstacle = true
     end;
     move = function(self, newX, newY)
         self.position = Vector(newX, newY)

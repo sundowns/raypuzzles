@@ -4,9 +4,15 @@ return {
     width = 400,
     height = 600,
     data = {
-        {shape = "TriangularObstacle", x = 150, y = 200, length = 100, rotation=math.pi/2},
-        {shape = "TriangularObstacle", x = 250, y = 250, length = 100, rotation=math.pi, rotates = true},
-        {shape = "RectangularSpawn", x = 0, y = 0, width = 300, height = 30},
-        {shape = "RectangularGoal", x = 0, y = 570, width = 300, height = 30}
+        {shape = "TriangularObstacle", x = 25, y = 100, length = 50, rotation = math.pi},
+        {shape = "TriangularObstacle", x = 75, y = 100, length = 50, rotation = math.pi},
+        {shape = "TriangularObstacle", x = 125, y = 100, length = 50, rotation = math.pi},
+        {shape = "TriangularObstacle", x = 175, y = 100, length = 50, rotation = math.pi},
+        {shape = "TriangularObstacle", x = 225, y = 100, length = 50, rotation = math.pi},
+        -- {shape = "TriangularObstacle", x = 275, y = 100, length = 50, rotation = math.pi},
+        -- {shape = "TriangularObstacle", x = 325, y = 100, length = 50, rotation = math.pi},
+        {shape = "TriangularObstacle", x = 375, y = 100, length = 50, rotation = math.pi},
+        {shape = "RectangularSpawn", x = 0, y = 0, width = 60, height = 60},
+        {shape = "RectangularGoal", x = 340, y = 540, width = 60, height = 60}
     }
 }

@@ -9,7 +9,7 @@ local stageManager = {}
 camera = nil
 
 -- Add to a constants file
-BASE_POWER = 50
+BASE_POWER = 160
 PARTICLE_RADIUS = 6
 MAP_WIDTH = 0
 MAP_HEIGHT = 0
