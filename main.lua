@@ -38,8 +38,6 @@ function love.load()
     --TODO: readd mouse obstacle
     print("=====[CONTROLS]=====")
     print("MOUSE1: Place a ray (hold and release)")
-    print("MOUSE2: Place a randomly shaped obstacle")
-    print("MOUSE3: Move stuff around")
     print("SPACE: Pause")
     print("WASD/Arrows: Move camera")
     print("F1: Restart")
@@ -112,7 +110,6 @@ function love.keypressed(key, scancode, isrepeat)
             gameOver = false
             camera:lookAt(MAP_WIDTH/2, MAP_HEIGHT/2)
         end
-        print("wtff")
         paused = not paused
     elseif key == "f1" then
         love.event.quit("restart")

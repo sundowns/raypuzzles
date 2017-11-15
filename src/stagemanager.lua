@@ -63,6 +63,12 @@ StageManager = Class {
                     table.insert(self.obstacles, RectangularTrap(item.x, item.y, item.width, item.height, item.rotation, item.rotates))
                 elseif item.shape == "TriangularObstacle" then
                     table.insert(self.obstacles, TriangularObstacle(item.x, item.y, item.length, item.rotation, item.rotates))
+                elseif item.shape == "TriangularGoal" then
+                    table.insert(self.obstacles, TriangularGoal(item.x, item.y, item.length, item.rotation, item.rotates))
+                elseif item.shape == "TriangularSpawn" then
+                    table.insert(self.obstacles, TriangularSpawn(item.x, item.y, item.length, item.rotation, item.rotates))
+                elseif item.shape == "TriangularTrap" then
+                    table.insert(self.obstacles, TriangularTrap(item.x, item.y, item.length, item.rotation, item.rotates))
                 end
             end
         end

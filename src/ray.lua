@@ -44,7 +44,7 @@ Ray = Class{
             self.collisionParticles:setEmissionRate(0)
         end
 
-        local kill = self:moveIncrementally(dt, 12)
+        local kill = self:moveIncrementally(dt, 15)
 
         self.collisionParticles:update(dt)
         self.trail:update(dt)
