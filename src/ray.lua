@@ -1,8 +1,8 @@
 local MIN_SPEED = 20
-local MAX_SPEED = 150
+local MAX_SPEED = 110
 local TRAIL_LENGTH = 120
 local PROJECTILE_SCATTER_COUNT = 100
-local LIFESPAN = 13 -- seconds
+local LIFESPAN = 12 -- seconds
 
 local PS_WIDTH, PS_HEIGHT = 100, 80
 
@@ -44,7 +44,7 @@ Ray = Class{
             self.collisionParticles:setEmissionRate(0)
         end
 
-        local kill = self:moveIncrementally(dt, 15)
+        local kill = self:moveIncrementally(dt, 30)
 
         self.collisionParticles:update(dt)
         self.trail:update(dt)
@@ -88,7 +88,6 @@ Ray = Class{
                     end
                 end
             end
-            self.direction = self.direction:normalized() * self.power -- to maintain constant speed
             self:moveWithDirection(timeIncrement)
         end
         return kill
@@ -118,7 +117,7 @@ Ray = Class{
         self.trail:setSizes(1, 0.75, 0.5, 0.15)
         self.trail:setLinearAcceleration(0, 0, 0, 0) -- (minX, minY, maxX, maxY)
         self.trail:setColors(r, g, b, 150, r, g, b, 40)
-        self.trail:setEmissionRate(120)
+        self.trail:setEmissionRate(240)
 
         -- Collision effects
         local collisionCanvas = love.graphics.newCanvas(PS_WIDTH, PS_HEIGHT)
@@ -151,17 +150,37 @@ Ray = Class{
         --TODO: Is this fine? seems ok for non-circles
         --TODO: replace this with bouncing off different walls that makes sense! (this makes no sense!)
         --dx,dy is the separating vector needed to stop overlap, NOT the normal vector (which we mirror/flip over for a proper bounce)
-        self.direction = self.direction + Vector(dx, dy)
+        --self.direction = self.direction + Vector(dx, dy)
+        local speed = self.direction:len()
+        local collisionDirection =  self.direction:normalized() + Vector(dx,dy):normalized()
+        self.direction = collisionDirection:normalized() * speed
         self:move(dx*dt, dy*dt) --this however is legit, the separating vector SHOULD be used to prevent clipping
         obstacle:collidedWith(-dx*dt, -dy*dt)
         self:emitCollisionParticles()
         if obstacle.IsTrap then return true else return false end
     end;
     collideWithRay = function(self, ray, dx, dy, dt)
-        local originalVelocity = self.direction:clone()
-        self.direction = (self.direction + ray.direction):normalized() * self.power
+        --Elastic collisions
+        --https://stackoverflow.com/questions/345838/ball-to-ball-collision-detection-and-handling
+        local collision = self.pos - ray.pos
+        collision = collision:normalized()
+
+        -- Get the components of the velocity vectors which are parallel to the collision.
+        local aci = self.direction * collision
+        local bci = ray.direction * collision
+        -- Solve for the new velocities using the 1-dimensional elastic collision equations.
+        local acf = bci
+        local bcf = aci
+
+        self.direction = self.direction + (acf-aci) * collision
+        ray.direction = ray.direction + (bcf-bci) * collision
+        --Old method:
+        -- local originalVelocity = self.direction:clone()
+        -- self.direction = (self.direction + ray.direction):normalized() * self.power
         self:move(dx*dt/2, dy*dt/2)
-        ray:collidedWith(-dx*dt/2, -dy*dt/2, originalVelocity)
+        ray:move(-dx*dt/2, -dy*dt/2)
+        -- ray:collidedWith(-dx*dt/2, -dy*dt/2, originalVelocity)
         self:emitCollisionParticles()
+        ray:emitCollisionParticles()
     end;
 }

@@ -21,7 +21,6 @@ function love.load()
     Camera = require "libs.camera"
     Timer = require "libs.timer"
     HC = require "libs.HC"
-    --HC.resetHash(20)
     require("src.util")
     require("src.ray")
     require("src.obstacle")
@@ -103,23 +102,13 @@ end
 function love.keypressed(key, scancode, isrepeat)
     if key == "space" then
         if gameOver then
-            rays = {}
-            newRayX = nil
-            newRayY = nil
-            stageManager:nextStage()
-            gameOver = false
-            camera:lookAt(MAP_WIDTH/2, MAP_HEIGHT/2)
+            nextStage()
         end
         paused = not paused
     elseif key == "f1" then
         love.event.quit("restart")
     elseif key == "f2" then
-        rays = {}
-        newRayX = nil
-        newRayY = nil
-        stageManager:nextStage()
-        gameOver = false
-        camera:lookAt(MAP_WIDTH/2, MAP_HEIGHT/2)
+        nextStage()
     end
 end
 
@@ -129,24 +118,18 @@ function love.mousepressed(x, y, button, isTouch)
         if button == 1 then
             local newRayPoint = HC.circle(camX, camY, PARTICLE_RADIUS)
             local inStartZone = false
-            --local inObstacle = false
             for other, separating_vector in pairs(HC.collisions(newRayPoint)) do
                 if other then
                     if other.owner.IsSpawn then
                         inStartZone = true
-                    -- else
-                    --     inObstacle = true
                     end
-
                 end
             end
             HC.remove(newRayPoint)
-            if inStartZone  then --and not inObstacle
+            if inStartZone then
                 newRayX = camX
                 newRayY = camY
             end
-        elseif button == 2 then
-            --stageManager:addRandomObstacle(camX, camY) --TODO: make use of elsewhere?
         end
     end
 end
@@ -164,12 +147,14 @@ function love.mousereleased(x, y, button, isTouch)
     end
 end
 
-function love.wheelmoved(x, y)
-    -- if y > 0 then -- fucks with power scale
-    --     camera:zoom(1.05)
-    -- elseif y < 0 then
-    --     camera:zoom(0.95)
-    -- end
+function nextStage()
+    rays = {}
+    newRayX = nil
+    newRayY = nil
+    stageManager:nextStage()
+    gameOver = false
+    MAP_WIDTH, MAP_HEIGHT = stageManager:getStageDimensions()
+    camera:lookAt(MAP_WIDTH/2, MAP_HEIGHT/2)
 end
 
 function goalHit()
