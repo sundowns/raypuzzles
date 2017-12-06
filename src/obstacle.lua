@@ -57,23 +57,23 @@ RectangularObstacle = Class{ _includes = Obstacle,
         self.height = height
         self.rotates = rotates
         self.rotation = spawn_rotation or 0
-        self.hitbox = HC.rectangle(x, y, width, height)
-        self.hitbox.owner = self
-        self.hitbox:rotate(self.rotation)
-        self.rotationalTickTime = 0.025
-        self.rotationSpeed = 0.075
-        self.isRotating = false
-        self.timer = Timer.new()
-        if self.rotates then
-            self.isRotating = true
-            self.timer:every(self.rotationalTickTime, function()
-                if self.isRotating then
-                    self.rotation = self.rotation + 2*math.pi/self.rotationalTickTime
-                    if self.rotation > 2*math.pi then self.rotation = self.rotation - 2*math.pi end
-                    self.hitbox:rotate(2*math.pi*self.rotationalTickTime*self.rotationSpeed)
-                end
-            end)
-        end
+        self.body = love.physics.newBody(world, x, y)
+        self.shape = love.physics.newRectangleShape(self.width, self.height)
+        self.fixture = love.physics.newFixture(self.body, self.shape, 1)
+        -- self.rotationalTickTime = 0.025
+        -- self.rotationSpeed = 0.075
+        -- self.isRotating = false
+        -- self.timer = Timer.new()
+        -- if self.rotates then
+        --     self.isRotating = true
+        --     self.timer:every(self.rotationalTickTime, function()
+        --         if self.isRotating then
+        --             self.rotation = self.rotation + 2*math.pi/self.rotationalTickTime
+        --             if self.rotation > 2*math.pi then self.rotation = self.rotation - 2*math.pi end
+        --             self.hitbox:rotate(2*math.pi*self.rotationalTickTime*self.rotationSpeed)
+        --         end
+        --     end)
+        -- end
     end;
     move = function(self, newX, newY)
         Obstacle.move(self, newX, newY)
@@ -81,7 +81,7 @@ RectangularObstacle = Class{ _includes = Obstacle,
     end;
     draw = function(self, mode)
         love.graphics.setColor(self.red, self.green, self.blue, self.alpha)
-        self.hitbox:draw(mode)
+        love.graphics.polygon("fill", self.body:getWorldPoints(self.shape:getPoints()))
         reset_colour()
     end;
     collidedWith = function(self)
@@ -93,7 +93,7 @@ RectangularObstacle = Class{ _includes = Obstacle,
     end;
     update = function(self, dt)
         Obstacle.update(self, dt)
-        self.timer:update(dt)
+        --self.timer:update(dt)
     end;
 }
 

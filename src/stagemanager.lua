@@ -6,7 +6,7 @@ StageManager = Class {
         for k, val in pairs(self.stageList) do
             self.stageList[k] = val:gsub("%.lua", "") --removeS file extensions
         end
-        self.currentStageOrdinal = 5
+        self.currentStageOrdinal = 6
         self.hasLoaded = false
         self:loadStage()
     end;
@@ -22,10 +22,11 @@ StageManager = Class {
                 print("Loaded " .. self.stageName)
                 self.loadedStage = stage
                 self.hasLoaded = true
-                table.insert(self.obstacles, RectangularObstacle(-50, -50, self.loadedStage.width + 100, 50)) --top wall (starts top left)
-                table.insert(self.obstacles, RectangularObstacle(-50, -50, 50, self.loadedStage.height + 100)) --left wall (starts top left)
-                table.insert(self.obstacles, RectangularObstacle(-50, self.loadedStage.height, self.loadedStage.width + 100, 50)) -- bottom wall (starts bottom left)
-                table.insert(self.obstacles, RectangularObstacle(self.loadedStage.width, -50, 50, self.loadedStage.height + 100)) --right wall (starts top right)
+                table.insert(self.obstacles, RectangularObstacle(self.loadedStage.width/2, 0, self.loadedStage.width, 20)) --top wall
+                table.insert(self.obstacles, RectangularObstacle(0, self.loadedStage.height/2, 20, self.loadedStage.height)) --left wall
+                table.insert(self.obstacles, RectangularObstacle(self.loadedStage.width/2, self.loadedStage.height, self.loadedStage.width, 20)) --bottom wall
+                table.insert(self.obstacles, RectangularObstacle(self.loadedStage.width, self.loadedStage.height/2, 20, self.loadedStage.height)) --right wall
+                -- table.insert(self.obstacles, RectangularObstacle(self.loadedStage.width, -50, 50, self.loadedStage.height + 100)) --right wall (starts top right)
                 self:populateStageObstacles()
             else
                 print("[ERR] Failed to load stagefile " .. self.stageName)

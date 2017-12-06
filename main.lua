@@ -4,9 +4,11 @@ local newRayY = nil
 local mouseObstacle = nil
 local currentStage = 1
 local stageManager = {}
+world = {}
 
 -- GLobal cause trust
 camera = nil
+debug = true
 
 -- Add to a constants file
 BASE_POWER = 160
@@ -15,12 +17,14 @@ MAP_WIDTH = 0
 MAP_HEIGHT = 0
 
 function love.load()
+    love.physics.setMeter(64)
+    world = love.physics.newWorld(0,0,true)
     math.randomseed(os.time())
     Vector = require "libs.vector"
     Class = require "libs.class"
     Camera = require "libs.camera"
     Timer = require "libs.timer"
-    HC = require "libs.HC"
+    --HC = require "libs.HC"
     require("src.util")
     require("src.ray")
     require("src.obstacle")
@@ -46,6 +50,7 @@ end
 
 function love.update(dt)
     if not paused then
+        world:update(dt)
         stageManager:update(dt)
         for i=#rays,1,-1 do --back to front so we can safely remove (https://stackoverflow.com/questions/12394841/safely-remove-items-from-an-array-table-while-iterating)
             local entity = rays[i]
@@ -75,11 +80,19 @@ function love.draw()
     reset_colour()
     stageManager:drawObstacles()
     for i, entity in ipairs(rays) do
+        entity:drawParticles()
+    end
+    for i, entity in ipairs(rays) do
         entity:draw()
     end
     if (newRayX and newRayY) then
         love.graphics.setColor(0, 0, 0,255)
         love.graphics.circle('fill', newRayX, newRayY, 5)
+    end
+
+    if debug then
+        love.graphics.setColor(255,0,0)
+        love.graphics.circle('fill', 0, 0, 3)
     end
     reset_colour()
     camera:detach()
@@ -95,8 +108,12 @@ function love.draw()
         love.graphics.setColor(255,0,0)
         love.graphics.print("P A U S E D", love.graphics.getWidth()/2 - 50, love.graphics.getHeight()/2)
     end
-    reset_colour()
 
+    if debug then
+        love.graphics.setColor(255,0,0)
+        love.graphics.print("debug",love.graphics.getWidth()-44,5)
+    end
+    reset_colour()
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -106,8 +123,10 @@ function love.keypressed(key, scancode, isrepeat)
         end
         paused = not paused
     elseif key == "f1" then
-        love.event.quit("restart")
+        debug = not debug
     elseif key == "f2" then
+        love.event.quit("restart")
+    elseif key == "f3" then
         nextStage()
     end
 end
@@ -116,20 +135,20 @@ function love.mousepressed(x, y, button, isTouch)
     if not paused then
         local camX, camY = camera:worldCoords(x, y)
         if button == 1 then
-            local newRayPoint = HC.circle(camX, camY, PARTICLE_RADIUS)
-            local inStartZone = false
-            for other, separating_vector in pairs(HC.collisions(newRayPoint)) do
-                if other then
-                    if other.owner.IsSpawn then
-                        inStartZone = true
-                    end
-                end
-            end
-            HC.remove(newRayPoint)
-            if inStartZone then
+            -- local newRayPoint = HC.circle(camX, camY, PARTICLE_RADIUS)
+            -- local inStartZone = false
+            -- for other, separating_vector in pairs(HC.collisions(newRayPoint)) do
+            --     if other then
+            --         if other.owner.IsSpawn then
+            --             inStartZone = true
+            --         end
+            --     end
+            -- end
+            --HC.remove(newRayPoint)
+            --if inStartZone then
                 newRayX = camX
                 newRayY = camY
-            end
+            --end
         end
     end
 end
