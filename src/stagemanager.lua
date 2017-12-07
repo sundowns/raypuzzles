@@ -6,13 +6,14 @@ StageManager = Class {
         for k, val in pairs(self.stageList) do
             self.stageList[k] = val:gsub("%.lua", "") --removeS file extensions
         end
-        self.currentStageOrdinal = 6
+        self.currentStageOrdinal = 1
         self.hasLoaded = false
         self:loadStage()
     end;
     loadStage = function(self)
         self.loadedStage = {}
         self.obstacles = {}
+        self.spawns = {}
         self.stageName = self.stageList[self.currentStageOrdinal]
         if not love.filesystem.exists(STAGES_DIRECTORY_PATH .. self.stageName .. ".lua") then
             print("Unable to locate stage file " .. STAGES_DIRECTORY_PATH .. self.stageName .. ".lua")
@@ -26,8 +27,8 @@ StageManager = Class {
                 table.insert(self.obstacles, RectangularObstacle(0, self.loadedStage.height/2, 20, self.loadedStage.height)) --left wall
                 table.insert(self.obstacles, RectangularObstacle(self.loadedStage.width/2, self.loadedStage.height, self.loadedStage.width, 20)) --bottom wall
                 table.insert(self.obstacles, RectangularObstacle(self.loadedStage.width, self.loadedStage.height/2, 20, self.loadedStage.height)) --right wall
-                -- table.insert(self.obstacles, RectangularObstacle(self.loadedStage.width, -50, 50, self.loadedStage.height + 100)) --right wall (starts top right)
                 self:populateStageObstacles()
+                raysRemaining = self.loadedStage.raysAllowed
             else
                 print("[ERR] Failed to load stagefile " .. self.stageName)
             end
@@ -51,7 +52,7 @@ StageManager = Class {
                 elseif item.shape == "CircularGoal" then
                     table.insert(self.obstacles, CircularGoal(item.x, item.y, item.radius))
                 elseif item.shape == "CircularSpawn" then
-                    table.insert(self.obstacles, CircularSpawn(item.x, item.y, item.radius))
+                    table.insert(self.spawns, CircularSpawn(item.x, item.y, item.radius))
                 elseif item.shape == "CircularTrap" then
                     table.insert(self.obstacles, CircularTrap(item.x, item.y, item.radius))
                 elseif item.shape == "RectangularObstacle" then
@@ -59,7 +60,7 @@ StageManager = Class {
                 elseif item.shape == "RectangularGoal" then
                     table.insert(self.obstacles, RectangularGoal(item.x, item.y, item.width, item.height, item.rotation, item.rotates))
                 elseif item.shape == "RectangularSpawn" then
-                    table.insert(self.obstacles, RectangularSpawn(item.x, item.y, item.width, item.height, item.rotation, item.rotates))
+                    table.insert(self.spawns, RectangularSpawn(item.x, item.y, item.width, item.height, item.rotation, item.rotates))
                 elseif item.shape == "RectangularTrap" then
                     table.insert(self.obstacles, RectangularTrap(item.x, item.y, item.width, item.height, item.rotation, item.rotates))
                 elseif item.shape == "TriangularObstacle" then
@@ -67,7 +68,7 @@ StageManager = Class {
                 elseif item.shape == "TriangularGoal" then
                     table.insert(self.obstacles, TriangularGoal(item.x, item.y, item.length, item.rotation, item.rotates))
                 elseif item.shape == "TriangularSpawn" then
-                    table.insert(self.obstacles, TriangularSpawn(item.x, item.y, item.length, item.rotation, item.rotates))
+                    table.insert(self.spawns, TriangularSpawn(item.x, item.y, item.length, item.rotation, item.rotates))
                 elseif item.shape == "TriangularTrap" then
                     table.insert(self.obstacles, TriangularTrap(item.x, item.y, item.length, item.rotation, item.rotates))
                 end
@@ -82,6 +83,9 @@ StageManager = Class {
         end
     end;
     drawObstacles = function(self)
+        for i, spawn in ipairs(self.spawns) do
+            spawn:draw('fill')
+        end
         for i, obstacle in ipairs(self.obstacles) do
             obstacle:draw('fill')
         end
@@ -104,5 +108,14 @@ StageManager = Class {
                 table.remove(self.obstacles, i)
             end
         end
+    end;
+    testPointForSpawning = function(self, x, y)
+        local allowSpawn = false
+        for i, spawn in ipairs(self.spawns) do
+            if spawn.fixture:testPoint(x, y) then
+                allowSpawn = true
+            end
+        end
+        return allowSpawn
     end;
 }

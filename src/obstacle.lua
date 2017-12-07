@@ -11,11 +11,14 @@ Obstacle = Class{
     move = function(self, newX, newY)
         self.position = Vector(newX, newY)
     end;
-    collidedWith = function(self)
-        --nothing for now, maybe some fancy effects/tweening?
-    end;
     update = function(self, dt)
         --nothing for now
+    end;
+    draw = function(self)
+        if debug then
+            love.graphics.setColor(255,0,180,255)
+            love.graphics.circle('fill',self.position.x, self.position.y, 3)
+        end
     end;
 }
 
@@ -26,26 +29,30 @@ Trap = Class{
         self.green = 0
         self.blue = 0
         self.alpha = 255
+        self.fixture:setSensor(true)
+        self.fixture:setUserData({isTrap = true})
     end;
 }
 
 Spawn = Class{
     init = function(self)
-        self.IsSpawn = true
         self.red = 255
         self.green = 200
         self.blue = 0
         self.alpha = 200
+        self.fixture:setSensor(true)
+        self.fixture:setUserData({isSpawn = true})
     end;
 }
 
 Goal = Class {
     init = function(self)
-        self.IsGoal = true
         self.red = 0
         self.green = 255
         self.blue = 0
         self.alpha = 200
+        self.fixture:setSensor(true)
+        self.fixture:setUserData({isGoal = true})
     end;
 }
 
@@ -59,7 +66,8 @@ RectangularObstacle = Class{ _includes = Obstacle,
         self.rotation = spawn_rotation or 0
         self.body = love.physics.newBody(world, x, y)
         self.shape = love.physics.newRectangleShape(self.width, self.height)
-        self.fixture = love.physics.newFixture(self.body, self.shape, 1)
+        self.fixture = love.physics.newFixture(self.body, self.shape, 0.2)
+
         -- self.rotationalTickTime = 0.025
         -- self.rotationSpeed = 0.075
         -- self.isRotating = false
@@ -77,19 +85,12 @@ RectangularObstacle = Class{ _includes = Obstacle,
     end;
     move = function(self, newX, newY)
         Obstacle.move(self, newX, newY)
-        self.hitbox:moveTo(newX, newY)
     end;
     draw = function(self, mode)
         love.graphics.setColor(self.red, self.green, self.blue, self.alpha)
-        love.graphics.polygon("fill", self.body:getWorldPoints(self.shape:getPoints()))
+        love.graphics.polygon(mode, self.body:getWorldPoints(self.shape:getPoints()))
+        Obstacle.draw(self)
         reset_colour()
-    end;
-    collidedWith = function(self)
-        Obstacle.collidedWith(self)
-        self.isRotating = false
-        self.timer:after(0.15, function()
-            self.isRotating = true
-        end)
     end;
     update = function(self, dt)
         Obstacle.update(self, dt)
@@ -108,9 +109,6 @@ RectangularGoal = Class{ _includes = RectangularObstacle,Goal,
     draw = function(self, mode)
         RectangularObstacle.draw(self, mode)
     end;
-    collidedWith = function(self)
-        goalHit()
-    end;
     update = function(self, dt)
         RectangularObstacle.update(self, dt)
     end;
@@ -127,9 +125,6 @@ RectangularSpawn = Class { _includes=RectangularObstacle,Spawn,
     draw = function(self, mode)
         RectangularObstacle.draw(self, mode)
     end;
-    collidedWith = function(self)
-        --nothing
-    end;
     update = function(self, dt)
         RectangularObstacle.update(self, dt)
     end;
@@ -145,9 +140,6 @@ RectangularTrap = Class { _includes=RectangularObstacle,Trap,
     end;
     draw = function(self, mode)
         RectangularObstacle.draw(self, mode)
-    end;
-    collidedWith = function(self)
-        --nothing
     end;
     update = function(self, dt)
         RectangularObstacle.update(self, dt)
@@ -171,9 +163,6 @@ CircularObstacle = Class { _includes = Obstacle,
         self.hitbox:draw(mode)
         reset_colour()
     end;
-    collidedWith = function(self)
-        Obstacle.collidedWith(self)
-    end;
     update = function(self, dt)
         Obstacle.update(self, dt)
     end;
@@ -189,9 +178,6 @@ CircularGoal = Class{ _includes = CircularObstacle,Goal,
     end;
     draw = function(self, mode)
         CircularObstacle.draw(self, mode)
-    end;
-    collidedWith = function(self)
-        goalHit()
     end;
     update = function(self, dt)
         CircularObstacle.update(self, dt)
@@ -209,9 +195,6 @@ CircularSpawn = Class { _includes=CircularObstacle,Spawn,
     draw = function(self, mode)
         CircularObstacle.draw(self, mode)
     end;
-    collidedWith = function(self)
-        --nothing
-    end;
     update = function(self, dt)
         CircularObstacle.update(self, dt)
     end;
@@ -227,9 +210,6 @@ CircularTrap = Class { _includes=CircularObstacle,Trap,
     end;
     draw = function(self, mode)
         CircularObstacle.draw(self, mode)
-    end;
-    collidedWith = function(self)
-        --nothing
     end;
     update = function(self, dt)
         CircularObstacle.update(self, dt)
@@ -260,43 +240,42 @@ TriangularObstacle = Class{ _includes=Obstacle,
         self.sideLength = length
         self.rotation = spawn_rotation or 0
         self.rotates = rotates
-        self.hitbox = HC.polygon(aX, aY, bX, bY, cX, cY)
-        self.hitbox.owner = self
-        self.hitbox:rotate(self.rotation)
-        self.rotationalTickTime = 0.025
-        self.rotationSpeed = 0.075
-        self.timer = Timer.new()
-        self.isRotating = false
-        if self.rotates then
-            self.isRotating = true
-            self.timer:every(self.rotationalTickTime, function()
-                if self.isRotating then
-                    self.rotation = self.rotation + 2*math.pi/self.rotationalTickTime
-                    if self.rotation > 2*math.pi then self.rotation = self.rotation - 2*math.pi end
-                    self.hitbox:rotate(2*math.pi*self.rotationalTickTime*self.rotationSpeed)
-                end
-            end)
-        end
+
+        self.body = love.physics.newBody(world, 0, 0)
+        --self.body:setAngle(self.rotation)
+        self.shape = love.physics.newPolygonShape(aX, aY, bX, bY, cX, cY)
+        self.fixture = love.physics.newFixture(self.body, self.shape, 0.2)
+
+
+
+        -- self.rotationalTickTime = 0.025
+        -- self.rotationSpeed = 0.075
+        -- self.timer = Timer.new()
+        -- self.isRotating = false
+        -- if self.rotates then
+        --     self.isRotating = true
+        --     self.timer:every(self.rotationalTickTime, function()
+        --         if self.isRotating then
+        --             self.rotation = self.rotation + 2*math.pi/self.rotationalTickTime
+        --             if self.rotation > 2*math.pi then self.rotation = self.rotation - 2*math.pi end
+        --             self.hitbox:rotate(2*math.pi*self.rotationalTickTime*self.rotationSpeed)
+        --         end
+        --     end)
+        -- end
     end;
     move = function(self, newX, newY)
         Obstacle.move(self, newX, newY)
-        self.hitbox:moveTo(newX, newY)
+        --self.hitbox:moveTo(newX, newY)
     end;
     draw = function(self, mode)
         love.graphics.setColor(self.red, self.green, self.blue, self.alpha)
-        self.hitbox:draw(mode)
+        love.graphics.polygon(mode, self.body:getWorldPoints(self.shape:getPoints()))
+        Obstacle.draw(self)
         reset_colour()
-    end;
-    collidedWith = function(self)
-        Obstacle.collidedWith(self)
-        self.isRotating = false
-        self.timer:after(0.15, function()
-            self.isRotating = true
-        end)
     end;
     update = function(self, dt)
         Obstacle.update(self, dt)
-        self.timer:update(dt)
+        --self.timer:update(dt)
     end;
 }
 
@@ -310,9 +289,6 @@ TriangularGoal = Class{ _includes = TriangularObstacle,Goal,
     end;
     draw = function(self, mode)
         TriangularObstacle.draw(self, mode)
-    end;
-    collidedWith = function(self)
-        goalHit()
     end;
     update = function(self, dt)
         TriangularObstacle.update(self, dt)
@@ -330,9 +306,6 @@ TriangularSpawn = Class{ _includes = TriangularObstacle,Spawn,
     draw = function(self, mode)
         TriangularObstacle.draw(self, mode)
     end;
-    collidedWith = function(self)
-        --nothing
-    end;
     update = function(self, dt)
         TriangularObstacle.update(self, dt)
     end;
@@ -348,9 +321,6 @@ TriangularTrap = Class{ _includes = TriangularObstacle,Trap,
     end;
     draw = function(self, mode)
         TriangularObstacle.draw(self, mode)
-    end;
-    collidedWith = function(self)
-        --nothing
     end;
     update = function(self, dt)
         TriangularObstacle.update(self, dt)
